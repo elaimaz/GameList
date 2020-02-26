@@ -19,9 +19,36 @@ namespace GameList.Data
         }
 
         // GET: Games
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string gameGenre, string searchString)
         {
-            return View(await _context.Game.ToListAsync());
+            //Use LINQ to get list of genres.
+            IQueryable<string> genreQuery = from g in _context.Game orderby g.Genre select g.Genre;
+
+            var games = from g in _context.Game select g;
+
+            if (!String.IsNullOrEmpty(searchString))
+            {
+                games = games.Where(s => s.Title.Contains(searchString));
+            }
+
+            if (!String.IsNullOrEmpty(gameGenre))
+            {
+                games = games.Where(s => s.Genre.Contains(gameGenre));
+            }
+
+            var gameGenreVC = new GameGenreViewClass
+            {
+                Genres = new SelectList(await genreQuery.Distinct().ToListAsync()),
+                Games = await games.ToListAsync()
+            };
+
+            return View(gameGenreVC);
+        }
+
+        [HttpPost]
+        public string Index(string searchString, bool notUsed)
+        {
+            return "From [HttpPost]Index: filter on " + searchString;
         }
 
         // GET: Games/Details/5
